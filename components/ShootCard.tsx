@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, MapPin, User, DollarSign, Package, Share2, Briefcase, Calendar, Palette, Scissors, AlignLeft } from 'lucide-react';
+import { Clock, MapPin, User, DollarSign, Package, Share2, Briefcase, Calendar, Palette, Scissors, AlignLeft, Bell } from 'lucide-react';
 import { Shoot, Client, PaymentStatus, ShootStatus } from '../types';
 
 interface ShootCardProps {
@@ -146,6 +146,9 @@ export const ShootCard: React.FC<ShootCardProps> = ({ shoot, client, onClick }) 
         <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
             <Clock size={14} className="mr-2 text-slate-400 dark:text-slate-500" />
             <span>{new Date(shoot.date + 'T00:00:00').toLocaleDateString('pt-BR')} às {shoot.time}</span>
+            {shoot.reminderMinutes && shoot.reminderMinutes > 0 && (
+                <Bell size={12} className="ml-2 text-blue-500 dark:text-blue-400" fill="currentColor" fillOpacity={0.2} />
+            )}
         </div>
         
         {shoot.location && (
