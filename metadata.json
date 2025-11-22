@@ -1,0 +1,5 @@
+{
+  "name": "FotoAgenda Pro",
+  "description": "A PWA for professional photographers to manage shoots, clients, and finances.",
+  "requestFramePermissions": []
+}
