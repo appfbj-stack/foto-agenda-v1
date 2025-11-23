@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from './services/storageService';
 import { Client, Shoot, ViewState, ShootStatus, PaymentStatus } from './types';
@@ -7,6 +8,7 @@ import { ShootCard } from './components/ShootCard';
 import { ClientModal } from './components/ClientModal';
 import { ShootModal } from './components/ShootModal';
 import { Toast } from './components/Toast';
+import { LandingPage } from './components/LandingPage';
 import { 
   Calendar as CalendarIcon, 
   Users, 
@@ -19,11 +21,19 @@ import {
   ArrowRight,
   UserPlus,
   History,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 function App() {
+  // Intro State
+  const [showLanding, setShowLanding] = useState(() => {
+    // Check if user has already entered the app before
+    const hasVisited = localStorage.getItem('fotoagenda_intro_seen');
+    return !hasVisited;
+  });
+
   const [view, setView] = useState<ViewState>('dashboard');
   const [clients, setClients] = useState<Client[]>([]);
   const [shoots, setShoots] = useState<Shoot[]>([]);
@@ -155,6 +165,19 @@ function App() {
     setIsShootModalOpen(true);
   };
 
+  // Handle Entrance from Landing Page
+  const handleEnterApp = () => {
+    localStorage.setItem('fotoagenda_intro_seen', 'true');
+    setShowLanding(false);
+  };
+
+  // Handle Exit to Landing Page
+  const handleExit = () => {
+    // We remove the flag so if they refresh, they see the landing page again
+    localStorage.removeItem('fotoagenda_intro_seen');
+    setShowLanding(true);
+  };
+
   // --- Derived Data ---
   const upcomingShoots = useMemo(() => {
     return shoots
@@ -249,12 +272,17 @@ function App() {
                 <button 
                     onClick={toggleDarkMode}
                     className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    title="Alternar Tema"
                 >
                     {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800">
-                    FT
-                </div>
+                <button
+                    onClick={handleExit}
+                    className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-red-500 dark:text-red-400 border border-slate-300 dark:border-slate-700 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    title="Sair para Tela Inicial"
+                >
+                    <LogOut size={18} />
+                </button>
             </div>
         </div>
 
@@ -523,6 +551,12 @@ function App() {
       </div>
     );
   };
+
+  // --- Main Render ---
+
+  if (showLanding) {
+    return <LandingPage onEnter={handleEnterApp} />;
+  }
 
   return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300 flex flex-col h-screen overflow-hidden">
