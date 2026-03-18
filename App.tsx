@@ -9,6 +9,7 @@ import { ClientModal } from './components/ClientModal';
 import { ShootModal } from './components/ShootModal';
 import { Toast } from './components/Toast';
 import { LandingPage } from './components/LandingPage';
+import { CalendarioMensal } from './components/CalendarioMensal';
 import { 
   Calendar as CalendarIcon, 
   Users, 
@@ -360,8 +361,10 @@ function App() {
     </div>
   );
 
+  const [agendaView, setAgendaView] = useState<'lista' | 'mes'>('mes');
+
   const renderCalendar = () => {
-    const filteredShoots = upcomingShoots.filter(s => 
+    const filteredShoots = upcomingShoots.filter(s =>
         (s.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.location || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -370,60 +373,100 @@ function App() {
 
     return (
       <div className="space-y-4 animate-in fade-in duration-300 pb-24">
-         <div className="sticky top-0 bg-slate-50 dark:bg-slate-950 pt-1 pb-4 z-10">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Agenda</h1>
-            <div className="relative">
+         <div className="sticky top-0 bg-slate-50 dark:bg-slate-950 pt-1 pb-3 z-10">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Agenda</h1>
+              {/* toggle Lista / Mês */}
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
+                <button
+                  onClick={() => setAgendaView('mes')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    agendaView === 'mes'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  📅 Mês
+                </button>
+                <button
+                  onClick={() => setAgendaView('lista')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    agendaView === 'lista'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  ☰ Lista
+                </button>
+              </div>
+            </div>
+
+            {agendaView === 'lista' && (
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                <input 
+                <input
                     type="text"
                     placeholder="Buscar eventos..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-            </div>
+              </div>
+            )}
          </div>
 
-        {groupedShoots.length === 0 ? (
-             <div className="text-center py-10 text-slate-400 dark:text-slate-600">
-                 <CalendarIcon size={48} className="mx-auto mb-3 opacity-20" />
-                 <p>Nenhum evento futuro encontrado.</p>
-                 {searchTerm && (
-                     <button 
-                        onClick={() => setSearchTerm('')}
-                        className="mt-2 text-blue-500 text-sm font-medium"
-                     >
-                         Limpar busca
-                     </button>
-                 )}
-             </div>
-        ) : (
-            <div className="space-y-6">
-                {groupedShoots.map((group) => (
-                    <div key={group.month}>
-                         <div className="sticky top-16 z-[5] bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm py-2 mb-2 border-b border-slate-200 dark:border-slate-800">
-                             <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                 {group.month}
-                             </h3>
-                         </div>
-                         <div className="space-y-0">
-                            {group.items.map(shoot => (
-                                <div key={shoot.id} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 ml-2 pb-4 last:pb-0">
-                                    <div className={`absolute -left-[5px] top-6 w-2.5 h-2.5 rounded-full ring-4 ring-slate-50 dark:ring-slate-950 ${shoot.isPersonal ? 'bg-purple-500' : 'bg-blue-500'}`}></div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1 uppercase">
-                                        {new Date(shoot.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric' })}
-                                    </p>
-                                    <ShootCard 
-                                        shoot={shoot} 
-                                        client={shoot.isPersonal ? undefined : clients.find(c => c.id === shoot.clientId)} 
-                                        onClick={() => handleEditShoot(shoot)}
-                                    />
-                                </div>
-                            ))}
-                         </div>
-                    </div>
-                ))}
-            </div>
+        {/* ── VISÃO MENSAL ── */}
+        {agendaView === 'mes' && (
+          <CalendarioMensal
+            shoots={shoots}
+            clients={clients}
+            onShootClick={handleEditShoot}
+          />
+        )}
+
+        {/* ── VISÃO LISTA ── */}
+        {agendaView === 'lista' && (
+          groupedShoots.length === 0 ? (
+               <div className="text-center py-10 text-slate-400 dark:text-slate-600">
+                   <CalendarIcon size={48} className="mx-auto mb-3 opacity-20" />
+                   <p>Nenhum evento futuro encontrado.</p>
+                   {searchTerm && (
+                       <button
+                          onClick={() => setSearchTerm('')}
+                          className="mt-2 text-blue-500 text-sm font-medium"
+                       >
+                           Limpar busca
+                       </button>
+                   )}
+               </div>
+          ) : (
+              <div className="space-y-6">
+                  {groupedShoots.map((group) => (
+                      <div key={group.month}>
+                           <div className="sticky top-16 z-[5] bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm py-2 mb-2 border-b border-slate-200 dark:border-slate-800">
+                               <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                   {group.month}
+                               </h3>
+                           </div>
+                           <div className="space-y-0">
+                              {group.items.map(shoot => (
+                                  <div key={shoot.id} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 ml-2 pb-4 last:pb-0">
+                                      <div className={`absolute -left-[5px] top-6 w-2.5 h-2.5 rounded-full ring-4 ring-slate-50 dark:ring-slate-950 ${shoot.isPersonal ? 'bg-purple-500' : 'bg-blue-500'}`}></div>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1 uppercase">
+                                          {new Date(shoot.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric' })}
+                                      </p>
+                                      <ShootCard
+                                          shoot={shoot}
+                                          client={shoot.isPersonal ? undefined : clients.find(c => c.id === shoot.clientId)}
+                                          onClick={() => handleEditShoot(shoot)}
+                                      />
+                                  </div>
+                              ))}
+                           </div>
+                      </div>
+                  ))}
+              </div>
+          )
         )}
       </div>
     );
