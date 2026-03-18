@@ -1,8 +1,10 @@
 
 import { Client, Shoot, ShootStatus, PaymentStatus } from '../types';
 
-const CLIENTS_KEY = 'fotoagenda_clients';
-const SHOOTS_KEY = 'fotoagenda_shoots';
+const DB_NAME = 'FotoAgendaDB';
+const DB_VERSION = 1;
+const STORE_CLIENTS = 'clients';
+const STORE_SHOOTS = 'shoots';
 
 // Seed data for initial experience
 const seedClients: Client[] = [
@@ -17,7 +19,7 @@ const seedShoots: Shoot[] = [
     title: 'Ensaio Gestante - Parque',
     isPersonal: false,
     packageType: 'Gold',
-    date: new Date().toISOString().split('T')[0], // Today
+    date: new Date().toISOString().split('T')[0],
     time: '15:00',
     location: 'Parque Ibirapuera',
     makeupArtist: 'Julia Beauty',
@@ -36,7 +38,7 @@ const seedShoots: Shoot[] = [
     title: 'Retratos Corporativos',
     isPersonal: false,
     packageType: 'Básico',
-    date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // 2 days later
+    date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
     time: '10:00',
     location: 'Escritório Av. Paulista',
     price: 800,
@@ -51,7 +53,7 @@ const seedShoots: Shoot[] = [
     clientId: 'personal',
     title: 'Consulta Médica',
     isPersonal: true,
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     time: '08:00',
     location: 'Clínica Central',
     price: 0,
@@ -63,54 +65,123 @@ const seedShoots: Shoot[] = [
   }
 ];
 
-export const storageService = {
-  getClients: (): Client[] => {
-    const data = localStorage.getItem(CLIENTS_KEY);
-    if (!data) {
-      localStorage.setItem(CLIENTS_KEY, JSON.stringify(seedClients));
-      return seedClients;
-    }
-    return JSON.parse(data);
-  },
+class DBService {
+  private db: IDBDatabase | null = null;
 
-  saveClient: (client: Client): void => {
-    const clients = storageService.getClients();
-    const index = clients.findIndex(c => c.id === client.id);
-    if (index >= 0) {
-      clients[index] = client;
-    } else {
-      clients.push(client);
-    }
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-  },
+  async open(): Promise<IDBDatabase> {
+    if (this.db) return this.db;
 
-  deleteClient: (id: string): void => {
-    const clients = storageService.getClients().filter(c => c.id !== id);
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-  },
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-  getShoots: (): Shoot[] => {
-    const data = localStorage.getItem(SHOOTS_KEY);
-    if (!data) {
-      localStorage.setItem(SHOOTS_KEY, JSON.stringify(seedShoots));
-      return seedShoots;
-    }
-    return JSON.parse(data);
-  },
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve(request.result);
+      };
 
-  saveShoot: (shoot: Shoot): void => {
-    const shoots = storageService.getShoots();
-    const index = shoots.findIndex(s => s.id === shoot.id);
-    if (index >= 0) {
-      shoots[index] = shoot;
-    } else {
-      shoots.push(shoot);
-    }
-    localStorage.setItem(SHOOTS_KEY, JSON.stringify(shoots));
-  },
-
-  deleteShoot: (id: string): void => {
-    const shoots = storageService.getShoots().filter(s => s.id !== id);
-    localStorage.setItem(SHOOTS_KEY, JSON.stringify(shoots));
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_CLIENTS)) {
+          db.createObjectStore(STORE_CLIENTS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORE_SHOOTS)) {
+          db.createObjectStore(STORE_SHOOTS, { keyPath: 'id' });
+        }
+      };
+    });
   }
-};
+
+  async migrateFromLocalStorage() {
+    const db = await this.open();
+    const oldClients = localStorage.getItem('fotoagenda_clients');
+    const oldShoots = localStorage.getItem('fotoagenda_shoots');
+
+    if (oldClients) {
+      const clients: Client[] = JSON.parse(oldClients);
+      for (const c of clients) await this.saveClient(c);
+      localStorage.removeItem('fotoagenda_clients');
+    }
+
+    if (oldShoots) {
+      const shoots: Shoot[] = JSON.parse(oldShoots);
+      for (const s of shoots) await this.saveShoot(s);
+      localStorage.removeItem('fotoagenda_shoots');
+    }
+    
+    // Check if seeded data is needed
+    const currentClients = await this.getClients();
+    if (currentClients.length === 0 && !oldClients) {
+      for (const c of seedClients) await this.saveClient(c);
+      for (const s of seedShoots) await this.saveShoot(s);
+    }
+  }
+
+  async getClients(): Promise<Client[]> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_CLIENTS, 'readonly');
+      const store = transaction.objectStore(STORE_CLIENTS);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveClient(client: Client): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_CLIENTS, 'readwrite');
+      const store = transaction.objectStore(STORE_CLIENTS);
+      const request = store.put(client);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteClient(id: string): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_CLIENTS, 'readwrite');
+      const store = transaction.objectStore(STORE_CLIENTS);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getShoots(): Promise<Shoot[]> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_SHOOTS, 'readonly');
+      const store = transaction.objectStore(STORE_SHOOTS);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveShoot(shoot: Shoot): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_SHOOTS, 'readwrite');
+      const store = transaction.objectStore(STORE_SHOOTS);
+      const request = store.put(shoot);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteShoot(id: string): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_SHOOTS, 'readwrite');
+      const store = transaction.objectStore(STORE_SHOOTS);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+}
+
+export const storageService = new DBService();

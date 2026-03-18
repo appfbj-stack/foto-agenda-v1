@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, MapPin, DollarSign, Bell, Package, Briefcase, User, Stethoscope, Users, Palette, Scissors, AlignLeft, Plus, UserPlus } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, DollarSign, Bell, Package, Briefcase, User, Stethoscope, Users, Palette, Scissors, AlignLeft, Plus, UserPlus, Calculator } from 'lucide-react';
 import { Shoot, Client, ShootStatus, PaymentStatus } from '../types';
 
 interface ShootModalProps {
@@ -32,6 +32,14 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING);
   const [status, setStatus] = useState<ShootStatus>(ShootStatus.SCHEDULED);
   const [reminderMinutes, setReminderMinutes] = useState<number>(0);
+
+  // Calculator State
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcWeeks, setCalcWeeks] = useState<number | ''>('');
+  const [calcRefDate, setCalcRefDate] = useState<string>('');
+  const [bestPeriod, setBestPeriod] = useState<Date | null>(null);
+  const [limitDate, setLimitDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
 
   // Logic to detect new client added and select it
   const [prevClientsLength, setPrevClientsLength] = useState(clients.length);
@@ -147,8 +155,36 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
         setStatus(ShootStatus.SCHEDULED);
         setReminderMinutes(0);
       }
+      
+      // Reset calculator
+      setShowCalculator(false);
+      setCalcWeeks('');
+      setCalcRefDate(getLocalDateString());
     }
-  }, [isOpen, existingShoot]);
+  }, [isOpen, existingShoot, clients]);
+
+  useEffect(() => {
+    if (calcWeeks !== '' && calcRefDate) {
+      const refDate = new Date(calcRefDate + 'T12:00:00');
+      const weeksNum = Number(calcWeeks);
+      
+      const daysPregnant = weeksNum * 7;
+      const conceptionDate = new Date(refDate.getTime() - daysPregnant * 24 * 60 * 60 * 1000);
+
+      const best = new Date(conceptionDate.getTime() + 210 * 24 * 60 * 60 * 1000);
+      setBestPeriod(best);
+
+      const limit = new Date(conceptionDate.getTime() + 231 * 24 * 60 * 60 * 1000);
+      setLimitDate(limit);
+
+      const due = new Date(conceptionDate.getTime() + 280 * 24 * 60 * 60 * 1000);
+      setDueDate(due);
+    } else {
+      setBestPeriod(null);
+      setLimitDate(null);
+      setDueDate(null);
+    }
+  }, [calcWeeks, calcRefDate]);
 
   if (!isOpen) return null;
 
@@ -297,6 +333,69 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
                 placeholder={isPersonal ? "Ex: Médico, Reunião..." : "Ex: Ensaio Gestante Externo"}
               />
             </div>
+
+            {/* Pregnancy Calculator Toggle */}
+            {!isPersonal && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowCalculator(!showCalculator)}
+                  className="w-full p-3 flex items-center justify-between text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                >
+                  <div className="flex items-center font-bold text-sm">
+                    <Calculator size={16} className="mr-2" />
+                    Calculadora Gestante
+                  </div>
+                  <span className="text-xs font-medium">{showCalculator ? 'Ocultar' : 'Mostrar'}</span>
+                </button>
+                
+                {showCalculator && (
+                  <div className="p-4 border-t border-blue-100 dark:border-blue-800/50 space-y-4">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">Preencher aqui abaixo</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-600 dark:text-slate-300 mb-1">Numero de Semanas</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="42"
+                          value={calcWeeks}
+                          onChange={(e) => setCalcWeeks(e.target.value ? Number(e.target.value) : '')}
+                          className="w-full p-2 bg-white dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          placeholder="Ex: 29"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-600 dark:text-slate-300 mb-1">Data de Referência</label>
+                        <input
+                          type="date"
+                          value={calcRefDate}
+                          onChange={(e) => setCalcRefDate(e.target.value)}
+                          className="w-full p-2 bg-white dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    {(bestPeriod || limitDate || dueDate) && (
+                      <div className="space-y-2 pt-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-600 dark:text-slate-300">Data do Melhor período</span>
+                          <span className="font-bold text-blue-700 dark:text-blue-400">{bestPeriod ? bestPeriod.toLocaleDateString('pt-BR') : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-600 dark:text-slate-300">Data Limite</span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">{limitDate ? limitDate.toLocaleDateString('pt-BR') : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm pt-1 border-t border-blue-200 dark:border-blue-800/50">
+                          <span className="font-bold text-slate-700 dark:text-slate-200">Data Provavel do Parto</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{dueDate ? dueDate.toLocaleDateString('pt-BR') : '-'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Packages (Only for Work) */}
             {!isPersonal && (
