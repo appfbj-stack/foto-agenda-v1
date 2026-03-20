@@ -1,0 +1,24 @@
+{
+  "name": "FotoAgenda Pro",
+  "short_name": "FotoAgenda",
+  "description": "A ferramenta essencial para fotógrafos organizarem ensaios e finanças.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/0ea5e9/ffffff/png?text=FA",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/0ea5e9/ffffff/png?text=FA",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

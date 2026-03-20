@@ -1,9 +1,10 @@
 
-const CACHE_NAME = 'fotoagenda-v4';
+const CACHE_NAME = 'fotoagenda-v5';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icon.svg',
   'https://cdn.tailwindcss.com' // Essencial para o estilo funcionar offline
 ];
 
