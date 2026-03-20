@@ -39,7 +39,7 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
   const [calcRefDate, setCalcRefDate] = useState<string>('');
   const [bestPeriod, setBestPeriod] = useState<Date | null>(null);
   const [limitDate, setLimitDate] = useState<Date | null>(null);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [weeklyCalendar, setWeeklyCalendar] = useState<{week: number, date: Date}[]>([]);
 
   // Logic to detect new client added and select it
   const [prevClientsLength, setPrevClientsLength] = useState(clients.length);
@@ -177,12 +177,21 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
       const limit = new Date(conceptionDate.getTime() + 231 * 24 * 60 * 60 * 1000);
       setLimitDate(limit);
 
-      const due = new Date(conceptionDate.getTime() + 280 * 24 * 60 * 60 * 1000);
-      setDueDate(due);
+      // Weekly calendar (29 to 31 weeks)
+      const calendar = [];
+      for (let w = 29; w <= 31; w++) {
+        const weekDate = new Date(conceptionDate.getTime() + w * 7 * 24 * 60 * 60 * 1000);
+        weekDate.setHours(12, 0, 0, 0);
+        calendar.push({
+          week: w,
+          date: weekDate
+        });
+      }
+      setWeeklyCalendar(calendar);
     } else {
       setBestPeriod(null);
       setLimitDate(null);
-      setDueDate(null);
+      setWeeklyCalendar([]);
     }
   }, [calcWeeks, calcRefDate]);
 
@@ -376,7 +385,7 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
                       </div>
                     </div>
                     
-                    {(bestPeriod || limitDate || dueDate) && (
+                    {(bestPeriod || limitDate) && (
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-slate-600 dark:text-slate-300">Data do Melhor período</span>
@@ -386,10 +395,22 @@ export const ShootModal: React.FC<ShootModalProps> = ({ isOpen, onClose, onSave,
                           <span className="text-slate-600 dark:text-slate-300">Data Limite</span>
                           <span className="font-bold text-amber-600 dark:text-amber-400">{limitDate ? limitDate.toLocaleDateString('pt-BR') : '-'}</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm pt-1 border-t border-blue-200 dark:border-blue-800/50">
-                          <span className="font-bold text-slate-700 dark:text-slate-200">Data Provavel do Parto</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{dueDate ? dueDate.toLocaleDateString('pt-BR') : '-'}</span>
-                        </div>
+                        
+                        {weeklyCalendar.length > 0 && (
+                          <div className="pt-3 mt-3 border-t border-blue-200 dark:border-blue-800/50">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block text-center">
+                              Calendário Semanal para Ensaio
+                            </span>
+                            <div className="grid grid-cols-1 gap-2">
+                              {weeklyCalendar.map((item) => (
+                                <div key={item.week} className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{item.week} Semanas</span>
+                                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.date.toLocaleDateString('pt-BR')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
