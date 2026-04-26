@@ -11,6 +11,7 @@ import { PregnancyCalculatorModal } from './components/PregnancyCalculatorModal'
 import { CalendarMonthView } from './components/CalendarMonthView';
 import { Toast } from './components/Toast';
 import { LandingPage } from './components/LandingPage';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { 
   Calendar as CalendarIcon, 
   Users, 
@@ -491,6 +492,8 @@ function App() {
             isOpen={isPregnancyCalculatorOpen} 
             onClose={() => setIsPregnancyCalculatorOpen(false)} 
         />
+
+        <PWAInstallBanner />
 
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>

@@ -2,23 +2,49 @@
   "name": "FotoAgenda Pro",
   "short_name": "FotoAgenda",
   "description": "A ferramenta essencial para fotógrafos organizarem ensaios e finanças.",
-  "start_url": "/",
+  "start_url": "/?standalone=true",
+  "id": "/?standalone=true",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0f172a",
   "theme_color": "#0ea5e9",
   "orientation": "portrait",
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Agenda",
+      "url": "/?standalone=true",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Financeiro",
+      "url": "/?standalone=true",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ]
 }
