@@ -1,6 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from './services/storageService';
+import {
+  apiLogin, apiRegister, apiMe, apiModules, apiGetClients, apiSaveClient, apiDeleteClient,
+  apiGetShoots, apiSaveShoot, apiDeleteShoot, apiHermesChat,
+  adminListTenants, adminUpdateTenant, adminToggleModule,
+  adminGetHermesUsage, adminSetHermesPlan, adminResetHermesUsage,
+  setToken, clearToken, isLoggedIn,
+} from './services/api';
 import { Client, Shoot, ViewState, ShootStatus, PaymentStatus } from './types';
 import { BottomNav } from './components/BottomNav';
 import { StatCard } from './components/StatCard';
@@ -34,6 +41,26 @@ function App() {
     const hasVisited = localStorage.getItem('fotoagenda_intro_seen');
     return !hasVisited;
   });
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login'|'register'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPass, setAuthPass] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authStudio, setAuthStudio] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [me, setMe] = useState<any>(null);
+  const [modules, setModules] = useState<Record<string,boolean>>({});
+  const [suspended, setSuspended] = useState(false);
+  const [showHermes, setShowHermes] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [hermesMessages, setHermesMessages] = useState<{role:string;content:string}[]>([]);
+  const [hermesInput, setHermesInput] = useState('');
+  const [hermesLoading, setHermesLoading] = useState(false);
+  const [hermesUsage, setHermesUsage] = useState<any>(null);
+  const [adminTenants, setAdminTenants] = useState<any[]>([]);
+  const [adminHermesUsage, setAdminHermesUsage] = useState<Record<number,any>>({});
+  const [adminSaving, setAdminSaving] = useState<string|null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState<ViewState>('dashboard');
@@ -76,6 +103,25 @@ function App() {
       setIsLoading(true);
       try {
         await storageService.migrateFromLocalStorage();
+        // Load from API if logged in, fallback to local
+        if (isLoggedIn()) {
+          try {
+            const [userMe, userMods] = await Promise.all([
+              apiMe().catch((e:any) => { if(e?.status===402){setSuspended(true);}  return null; }),
+              apiModules().catch(() => null),
+            ]);
+            if (userMe) { setMe(userMe); }
+            if (userMods) { setModules(userMods); }
+            const [apiClients, apiShoots] = await Promise.all([
+              apiGetClients().catch(() => null),
+              apiGetShoots().catch(() => null),
+            ]);
+            if (apiClients) { setClients(apiClients); setIsLoading(false); return; }
+            if (apiShoots) { setShoots(apiShoots); }
+          } catch {}
+        } else {
+          setShowAuth(true); setIsLoading(false); return;
+        }
         const loadedClients = await storageService.getClients();
         const loadedShoots = await storageService.getShoots();
         setClients(loadedClients);
@@ -148,15 +194,17 @@ function App() {
       id: Date.now().toString(),
       createdAt: Date.now(),
     };
-    await storageService.saveClient(client);
-    setClients(await storageService.getClients()); 
+    if (isLoggedIn()) { await apiSaveClient(client).catch(()=>null); }
+    else { await storageService.saveClient(client); }
+    setClients(isLoggedIn() ? await apiGetClients().catch(()=>storageService.getClients()) : await storageService.getClients()); 
     showToast('Cliente cadastrado com sucesso!');
   };
 
   const handleSaveShoot = async (shoot: Shoot) => {
     try {
-        await storageService.saveShoot(shoot);
-        setShoots(await storageService.getShoots()); 
+        if (isLoggedIn()) { await apiSaveShoot(shoot).catch(()=>null); }
+        else { await storageService.saveShoot(shoot); }
+        setShoots(isLoggedIn() ? await apiGetShoots().catch(()=>storageService.getShoots()) : await storageService.getShoots()); 
         setEditingShoot(null);
         showToast('Compromisso salvo com sucesso!');
     } catch (error) {
@@ -257,6 +305,220 @@ function App() {
     return groups;
   };
 
+  const handleLogin = async () => {
+    setAuthLoading(true); setAuthError('');
+    try {
+      const res = await apiLogin(authEmail, authPass);
+      setToken(res.access_token);
+      setShowAuth(false); setIsLoading(true);
+      const [userMe, mods] = await Promise.all([apiMe(), apiModules().catch(()=>null)]);
+      setMe(userMe); if(mods) setModules(mods);
+      const [cls, shs] = await Promise.all([apiGetClients(), apiGetShoots()]);
+      setClients(cls); setShoots(shs); setIsLoading(false);
+    } catch(e:any) { setAuthError(e.message||'Erro'); }
+    finally { setAuthLoading(false); }
+  };
+
+  const handleRegister = async () => {
+    setAuthLoading(true); setAuthError('');
+    try {
+      const res = await apiRegister({ name:authName, email:authEmail, password:authPass, studio_name:authStudio });
+      setToken(res.access_token);
+      setShowAuth(false); setIsLoading(true);
+      const [userMe, mods] = await Promise.all([apiMe(), apiModules().catch(()=>null)]);
+      setMe(userMe); if(mods) setModules(mods);
+      setClients([]); setShoots([]); setIsLoading(false);
+    } catch(e:any) { setAuthError(e.message||'Erro'); }
+    finally { setAuthLoading(false); }
+  };
+
+  const handleLogout = () => { clearToken(); setMe(null); setClients([]); setShoots([]); setShowAuth(true); };
+
+  const sendHermesMsg = async () => {
+    const text = hermesInput.trim(); if(!text || hermesLoading) return;
+    const msg = {role:'user',content:text};
+    setHermesMessages(prev=>[...prev,msg]); setHermesInput(''); setHermesLoading(true);
+    try {
+      const res = await apiHermesChat(text, [...hermesMessages, msg]);
+      setHermesMessages(prev=>[...prev,{role:'assistant',content:res.reply}]);
+      setHermesUsage({used:res.messages_used, limit:res.messages_limit, plan:res.plan});
+    } catch(e:any) {
+      const msg429 = e?.status===429 ? '🚫 Limite de mensagens atingido este mês. Contate o administrador.' : `Erro: ${e.message}`;
+      setHermesMessages(prev=>[...prev,{role:'assistant',content:msg429}]);
+    } finally { setHermesLoading(false); }
+  };
+
+  if (suspended) return (
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 text-center">
+      <div className="text-6xl mb-6">🔒</div>
+      <h1 className="text-2xl font-black mb-2">Acesso Suspenso</h1>
+      <p className="text-slate-400 mb-6 max-w-xs">Sua assinatura está suspensa. Entre em contato com o administrador.</p>
+      <a href={`https://wa.me/5541999999999?text=Preciso%20regularizar%20minha%20assinatura.`}
+        className="bg-[#25D366] text-white font-bold px-6 py-3 rounded-2xl">💬 WhatsApp</a>
+      <button onClick={()=>{setSuspended(false);setIsLoading(true);}} className="mt-4 text-slate-500 text-sm underline">Tentar novamente</button>
+    </div>
+  );
+
+  if (showAuth) return (
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 w-full max-w-sm">
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2">📷</div>
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white">FotoAgenda</h1>
+          <p className="text-slate-500 text-sm mt-1">{authMode==='login'?'Entre na sua conta':'Crie sua conta grátis'}</p>
+        </div>
+        {authError && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 text-sm p-3 rounded-xl mb-4">{authError}</div>}
+        <div className="space-y-3">
+          {authMode==='register' && (
+            <>
+              <input placeholder="Seu nome" value={authName} onChange={e=>setAuthName(e.target.value)}
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
+              <input placeholder="Nome do estúdio" value={authStudio} onChange={e=>setAuthStudio(e.target.value)}
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
+            </>
+          )}
+          <input type="email" placeholder="Email" value={authEmail} onChange={e=>setAuthEmail(e.target.value)}
+            className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
+          <input type="password" placeholder="Senha" value={authPass} onChange={e=>setAuthPass(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&(authMode==='login'?handleLogin():handleRegister())}
+            className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
+          <button onClick={authMode==='login'?handleLogin:handleRegister} disabled={authLoading}
+            className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all">
+            {authLoading?'Aguarde...':(authMode==='login'?'Entrar':'Criar conta')}
+          </button>
+        </div>
+        <p className="text-center text-sm text-slate-500 mt-4">
+          {authMode==='login'?'Não tem conta? ':'Já tem conta? '}
+          <button onClick={()=>{setAuthMode(authMode==='login'?'register':'login');setAuthError('');}}
+            className="text-rose-500 font-semibold">{authMode==='login'?'Cadastre-se':'Entrar'}</button>
+        </p>
+      </div>
+    </div>
+  );
+
+  if (showHermes) return (
+    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <button onClick={()=>setShowHermes(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div className="w-9 h-9 bg-rose-500/10 rounded-xl flex items-center justify-center">🤖</div>
+        <div><p className="font-bold text-sm text-slate-800 dark:text-white">Assistente IA</p>
+          {hermesUsage && <p className="text-xs text-slate-400">{hermesUsage.used}/{hermesUsage.limit} msgs • {hermesUsage.plan}</p>}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-28">
+        {hermesMessages.length===0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center pt-10 px-4">
+            <div className="text-5xl mb-4">🤖</div>
+            <p className="font-bold text-lg text-slate-700 dark:text-slate-200">Olá! Sou seu assistente</p>
+            <p className="text-sm text-slate-400 mb-6">Posso ajudar com sessões, clientes, agenda e dúvidas.</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {['📅 Próximas sessões','💰 Pagamentos','📋 Tarefas do dia','❓ Tirar dúvida'].map(c=>(
+                <button key={c} onClick={()=>setHermesInput(c.slice(3))}
+                  className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {hermesMessages.map((m,i)=>(
+          <div key={i} className={`flex ${m.role==='user'?'justify-end':'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${m.role==='user'?'bg-rose-500 text-white rounded-br-none':'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-none'}`}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {hermesLoading && <div className="flex justify-start"><div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-none px-4 py-3"><div className="flex gap-1">{[0,150,300].map(d=><span key={d} className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay:`${d}ms`}}/>)}</div></div></div>}
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-3 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+        <input className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 dark:text-white"
+          placeholder="Digite sua mensagem..." value={hermesInput} onChange={e=>setHermesInput(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&sendHermesMsg()} disabled={hermesLoading}/>
+        <button onClick={sendHermesMsg} disabled={hermesLoading||!hermesInput.trim()}
+          className="bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white rounded-xl px-4 py-2.5 transition-all">→</button>
+      </div>
+    </div>
+  );
+
+  if (showAdmin) return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-8">
+      <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3">
+        <button onClick={()=>setShowAdmin(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span className="text-lg">🛡️</span>
+        <div><h1 className="font-bold text-base text-slate-800 dark:text-white">Admin Master</h1>
+          <p className="text-xs text-slate-500">Módulos por cliente</p>
+        </div>
+      </div>
+      <div className="px-4 mt-4 space-y-4">
+        {adminTenants.filter(t=>t.id!==0).map(tenant=>(
+          <div key={tenant.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+              <div><p className="font-semibold text-sm text-slate-800 dark:text-white">{tenant.name}</p>
+                <p className="text-xs text-slate-500">{tenant.slug}</p>
+              </div>
+              <button onClick={async()=>{
+                  setAdminSaving(`active-${tenant.id}`);
+                  await adminUpdateTenant(tenant.id,{active:!tenant.active});
+                  const fresh=await adminListTenants(); setAdminTenants(fresh);
+                  setAdminSaving(null);
+                }} disabled={!!adminSaving}
+                className={`text-xs px-3 py-1 rounded-full font-semibold border transition-all ${tenant.active?'bg-green-100 text-green-700 border-green-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200':'bg-red-100 text-red-700 border-red-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200'}`}>
+                {adminSaving===`active-${tenant.id}`?'...':tenant.active?'🟢 ativo':'🔴 bloqueado'}
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {['hermes','financeiro','relatorios','calendario'].map(mod=>{
+                const enabled=tenant.modules?.[mod]??false;
+                return (
+                  <div key={mod} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm text-slate-700 dark:text-slate-300 capitalize">{mod==='hermes'?'Hermes IA':mod.charAt(0).toUpperCase()+mod.slice(1)}</span>
+                    <button onClick={async()=>{
+                        setAdminSaving(`${tenant.id}-${mod}`);
+                        await adminToggleModule(tenant.id,mod,!enabled);
+                        const fresh=await adminListTenants(); setAdminTenants(fresh);
+                        setAdminSaving(null);
+                      }} disabled={!!adminSaving} className="transition-all text-xl">
+                      {adminSaving===`${tenant.id}-${mod}`?'⏳':enabled?'🔵':'⚪'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {adminHermesUsage[tenant.id] && (
+              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hermes — Consumo</p>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-slate-600">{adminHermesUsage[tenant.id].messages_used} / {adminHermesUsage[tenant.id].messages_limit} msgs</span>
+                  <span className="text-xs font-bold text-rose-500">{adminHermesUsage[tenant.id].percent}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2 mb-3">
+                  <div className={`h-2 rounded-full ${adminHermesUsage[tenant.id].percent>=90?'bg-red-500':adminHermesUsage[tenant.id].percent>=70?'bg-amber-500':'bg-rose-400'}`}
+                    style={{width:`${adminHermesUsage[tenant.id].percent}%`}}/>
+                </div>
+                <div className="flex gap-2">
+                  <select value={adminHermesUsage[tenant.id].plan}
+                    onChange={async e=>{const u=await adminSetHermesPlan(tenant.id,e.target.value);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
+                    className="flex-1 text-xs rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+                    <option value="teste">🧪 Teste — 100</option>
+                    <option value="basico">📦 Básico — 1.000</option>
+                    <option value="pro">🚀 Pro — 5.000</option>
+                    <option value="ilimitado">♾️ Ilimitado</option>
+                  </select>
+                  <button onClick={async()=>{const u=await adminResetHermesUsage(tenant.id);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
+                    className="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 px-2 py-1.5 rounded-lg">🔄 Zerar</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   if (showLanding) {
     return <LandingPage onEnter={handleEnterApp} />;
   }
@@ -284,7 +546,25 @@ function App() {
                             <button onClick={toggleDarkMode} className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
                                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                             </button>
-                            <button onClick={handleExit} className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-red-500 dark:text-red-400 border border-slate-300 dark:border-slate-700">
+                            {modules?.hermes && (
+                              <button onClick={()=>setShowHermes(true)} title="Assistente IA"
+                                className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 border border-rose-200 dark:border-rose-800">
+                                🤖
+                              </button>
+                            )}
+                            {me?.role==='super_admin' && (
+                              <button onClick={async()=>{
+                                  const ts=await adminListTenants(); setAdminTenants(ts);
+                                  ts.forEach(async(t:any)=>{
+                                    if(t.id!==0){const u=await adminGetHermesUsage(t.id).catch(()=>null); if(u) setAdminHermesUsage(prev=>({...prev,[t.id]:u}));}
+                                  });
+                                  setShowAdmin(true);
+                                }} title="Admin Master"
+                                className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 border border-indigo-200 dark:border-indigo-800">
+                                🛡️
+                              </button>
+                            )}
+                            <button onClick={handleLogout} className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-red-500 dark:text-red-400 border border-slate-300 dark:border-slate-700">
                                 <LogOut size={18} />
                             </button>
                         </div>
