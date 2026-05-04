@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE = import.meta.env.VITE_API_URL || "https://api.fotografia.fbautomacao.space";
 
 function getToken() { return localStorage.getItem("fa_token") || ""; }
 export function setToken(t: string) { localStorage.setItem("fa_token", t); }
