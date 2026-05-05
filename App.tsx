@@ -315,7 +315,14 @@ function App() {
       setMe(userMe); if(mods) setModules(mods);
       const [cls, shs] = await Promise.all([apiGetClients(), apiGetShoots()]);
       setClients(cls); setShoots(shs); setIsLoading(false);
-    } catch(e:any) { setAuthError(e.message||'Erro'); }
+    } catch(e:any) {
+      const message = e?.message || 'Erro';
+      setAuthError(
+        message.includes('Falha de conexão com a API')
+          ? 'Não foi possível conectar ao servidor. Verifique o backend e a configuração de /api.'
+          : message
+      );
+    }
     finally { setAuthLoading(false); }
   };
 
@@ -328,7 +335,14 @@ function App() {
       const [userMe, mods] = await Promise.all([apiMe(), apiModules().catch(()=>null)]);
       setMe(userMe); if(mods) setModules(mods);
       setClients([]); setShoots([]); setIsLoading(false);
-    } catch(e:any) { setAuthError(e.message||'Erro'); }
+    } catch(e:any) {
+      const message = e?.message || 'Erro';
+      setAuthError(
+        message.includes('Falha de conexão com a API')
+          ? 'Não foi possível conectar ao servidor. Verifique o backend e a configuração de /api.'
+          : message
+      );
+    }
     finally { setAuthLoading(false); }
   };
 

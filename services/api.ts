@@ -1,4 +1,15 @@
-const BASE = import.meta.env.VITE_API_URL || "https://api.fotografia.fbautomacao.space";
+function normalizeBase(url: string) {
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function resolveBaseUrl() {
+  const configured = import.meta.env.VITE_API_URL?.trim();
+  if (configured) return normalizeBase(configured);
+  if (import.meta.env.DEV) return "http://localhost:8000";
+  return "/api";
+}
+
+const BASE = resolveBaseUrl();
 
 function getToken() { return localStorage.getItem("fa_token") || ""; }
 export function setToken(t: string) { localStorage.setItem("fa_token", t); }
@@ -6,17 +17,24 @@ export function clearToken() { localStorage.removeItem("fa_token"); }
 export function isLoggedIn() { return !!getToken(); }
 
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...opts,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}`, ...opts.headers },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    const e: any = new Error(err.detail || "Erro na requisição");
-    e.status = res.status;
-    throw e;
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      ...opts,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}`, ...opts.headers },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      const e: any = new Error(err.detail || "Erro na requisição");
+      e.status = res.status;
+      throw e;
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error("Falha de conexão com a API. Verifique o deploy do backend e a URL /api.");
+    }
+    throw error;
   }
-  return res.json();
 }
 
 // Auth
