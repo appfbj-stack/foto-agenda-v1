@@ -6,7 +6,7 @@ function resolveBaseUrl() {
   const configured = import.meta.env.VITE_API_URL?.trim();
   if (configured) return normalizeBase(configured);
   if (import.meta.env.DEV) return "http://localhost:8000";
-  return "/api";
+  return "https://api.fotografia.fbautomacao.space";
 }
 
 const BASE = resolveBaseUrl();
@@ -31,7 +31,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     return res.json();
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error("Falha de conexão com a API. Verifique o deploy do backend e a URL /api.");
+      throw new Error("Falha de conexão com a API. Verifique o deploy do backend e a URL pública da API.");
     }
     throw error;
   }
