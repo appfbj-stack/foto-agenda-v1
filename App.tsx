@@ -319,7 +319,7 @@ function App() {
       const message = e?.message || 'Erro';
       setAuthError(
         message.includes('Falha de conexão com a API')
-          ? 'Não foi possível conectar ao servidor. Verifique o backend e a configuração de /api.'
+          ? 'Não foi possível conectar ao servidor. Verifique o backend e a URL pública da API.'
           : message
       );
     }
@@ -339,7 +339,7 @@ function App() {
       const message = e?.message || 'Erro';
       setAuthError(
         message.includes('Falha de conexão com a API')
-          ? 'Não foi possível conectar ao servidor. Verifique o backend e a configuração de /api.'
+          ? 'Não foi possível conectar ao servidor. Verifique o backend e a URL pública da API.'
           : message
       );
     }

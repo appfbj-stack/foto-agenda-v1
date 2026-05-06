@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'fotoagenda-v8';
+const CACHE_NAME = 'fotoagenda-v9';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
