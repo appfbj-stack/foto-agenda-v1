@@ -769,7 +769,7 @@ function App() {
             )}
         </main>
 
-        <BottomNav currentView={view} onChangeView={setView} onAddClick={openNewShootModal} />
+        <BottomNav currentView={view} onChangeView={setView} onAddClick={openNewShootModal} hasHermes={!!modules?.hermes} isAdmin={me?.role==='super_admin'||me?.role==='admin'} onHermesClick={()=>setShowHermes(true)} onAdminClick={async()=>{const ts=await adminListTenants();setAdminTenants(ts);ts.forEach(async(t:any)=>{if(t.id!==0){const u=await adminGetHermesUsage(t.id).catch(()=>null);if(u)setAdminHermesUsage(prev=>({...prev,[t.id]:u}));}});setShowAdmin(true);}} />
 
         <ClientModal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} onSave={handleAddClient} />
 
