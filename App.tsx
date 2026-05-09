@@ -165,8 +165,8 @@ function App() {
 
             if (now >= reminderTime && now <= shootDate) {
                 try {
-                    new Notification('Lembrete 📸', {
-                        body: `O evento "${shoot.title}" começa em ${shoot.reminderMinutes} minutos!`,
+                    new Notification('Lembrete ð¸', {
+                        body: `O evento "${shoot.title}" comeÃ§a em ${shoot.reminderMinutes} minutos!`,
                         icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMGVhNWU5IiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjMgMTlhMiAyIDAgMCAxLTIgMkgzYTIgMiAwIDAgMS0yLTJWOGEyIDIgMCAwIDEgMi0yaDRsMi0zaDZsMiAzaDRhMiAyIDAgMCAxIDIgMnoiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjEzIiByPSI0Ii8+PC9zdmc+'
                     });
                 } catch (e) {
@@ -318,8 +318,8 @@ function App() {
     } catch(e:any) {
       const message = e?.message || 'Erro';
       setAuthError(
-        message.includes('Falha de conexão com a API')
-          ? 'Não foi possível conectar ao servidor. Verifique o backend e a URL pública da API.'
+        message.includes('Falha de conexÃ£o com a API')
+          ? 'NÃ£o foi possÃ­vel conectar ao servidor. Verifique o backend e a URL pÃºblica da API.'
           : message
       );
     }
@@ -338,8 +338,8 @@ function App() {
     } catch(e:any) {
       const message = e?.message || 'Erro';
       setAuthError(
-        message.includes('Falha de conexão com a API')
-          ? 'Não foi possível conectar ao servidor. Verifique o backend e a URL pública da API.'
+        message.includes('Falha de conexÃ£o com a API')
+          ? 'NÃ£o foi possÃ­vel conectar ao servidor. Verifique o backend e a URL pÃºblica da API.'
           : message
       );
     }
@@ -357,18 +357,18 @@ function App() {
       setHermesMessages(prev=>[...prev,{role:'assistant',content:res.reply}]);
       setHermesUsage({used:res.messages_used, limit:res.messages_limit, plan:res.plan});
     } catch(e:any) {
-      const msg429 = e?.status===429 ? '🚫 Limite de mensagens atingido este mês. Contate o administrador.' : `Erro: ${e.message}`;
+      const msg429 = e?.status===429 ? 'ð« Limite de mensagens atingido este mÃªs. Contate o administrador.' : `Erro: ${e.message}`;
       setHermesMessages(prev=>[...prev,{role:'assistant',content:msg429}]);
     } finally { setHermesLoading(false); }
   };
 
   if (suspended) return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-8 text-center">
-      <div className="text-6xl mb-6">🔒</div>
+      <div className="text-6xl mb-6">ð</div>
       <h1 className="text-2xl font-black mb-2">Acesso Suspenso</h1>
-      <p className="text-slate-400 mb-6 max-w-xs">Sua assinatura está suspensa. Entre em contato com o administrador.</p>
+      <p className="text-slate-400 mb-6 max-w-xs">Sua assinatura estÃ¡ suspensa. Entre em contato com o administrador.</p>
       <a href={`https://wa.me/5541999999999?text=Preciso%20regularizar%20minha%20assinatura.`}
-        className="bg-[#25D366] text-white font-bold px-6 py-3 rounded-2xl">💬 WhatsApp</a>
+        className="bg-[#25D366] text-white font-bold px-6 py-3 rounded-2xl">ð¬ WhatsApp</a>
       <button onClick={()=>{setSuspended(false);setIsLoading(true);}} className="mt-4 text-slate-500 text-sm underline">Tentar novamente</button>
     </div>
   );
@@ -377,9 +377,9 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-2">📷</div>
+          <div className="text-4xl mb-2">ð·</div>
           <h1 className="text-2xl font-black text-slate-800 dark:text-white">FotoAgenda</h1>
-          <p className="text-slate-500 text-sm mt-1">{authMode==='login'?'Entre na sua conta':'Crie sua conta grátis'}</p>
+          <p className="text-slate-500 text-sm mt-1">{authMode==='login'?'Entre na sua conta':'Crie sua conta grÃ¡tis'}</p>
         </div>
         {authError && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 text-sm p-3 rounded-xl mb-4">{authError}</div>}
         <div className="space-y-3">
@@ -387,7 +387,7 @@ function App() {
             <>
               <input placeholder="Seu nome" value={authName} onChange={e=>setAuthName(e.target.value)}
                 className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
-              <input placeholder="Nome do estúdio" value={authStudio} onChange={e=>setAuthStudio(e.target.value)}
+              <input placeholder="Nome do estÃºdio" value={authStudio} onChange={e=>setAuthStudio(e.target.value)}
                 className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-400"/>
             </>
           )}
@@ -402,7 +402,7 @@ function App() {
           </button>
         </div>
         <p className="text-center text-sm text-slate-500 mt-4">
-          {authMode==='login'?'Não tem conta? ':'Já tem conta? '}
+          {authMode==='login'?'NÃ£o tem conta? ':'JÃ¡ tem conta? '}
           <button onClick={()=>{setAuthMode(authMode==='login'?'register':'login');setAuthError('');}}
             className="text-rose-500 font-semibold">{authMode==='login'?'Cadastre-se':'Entrar'}</button>
         </p>
@@ -416,19 +416,19 @@ function App() {
         <button onClick={()=>setShowHermes(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <div className="w-9 h-9 bg-rose-500/10 rounded-xl flex items-center justify-center">🤖</div>
+        <div className="w-9 h-9 bg-rose-500/10 rounded-xl flex items-center justify-center">ð¤</div>
         <div><p className="font-bold text-sm text-slate-800 dark:text-white">Assistente IA</p>
-          {hermesUsage && <p className="text-xs text-slate-400">{hermesUsage.used}/{hermesUsage.limit} msgs • {hermesUsage.plan}</p>}
+          {hermesUsage && <p className="text-xs text-slate-400">{hermesUsage.used}/{hermesUsage.limit} msgs â¢ {hermesUsage.plan}</p>}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-28">
         {hermesMessages.length===0 && (
           <div className="flex flex-col items-center justify-center h-full text-center pt-10 px-4">
-            <div className="text-5xl mb-4">🤖</div>
-            <p className="font-bold text-lg text-slate-700 dark:text-slate-200">Olá! Sou seu assistente</p>
-            <p className="text-sm text-slate-400 mb-6">Posso ajudar com sessões, clientes, agenda e dúvidas.</p>
+            <div className="text-5xl mb-4">ð¤</div>
+            <p className="font-bold text-lg text-slate-700 dark:text-slate-200">OlÃ¡! Sou seu assistente</p>
+            <p className="text-sm text-slate-400 mb-6">Posso ajudar com sessÃµes, clientes, agenda e dÃºvidas.</p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {['📅 Próximas sessões','💰 Pagamentos','📋 Tarefas do dia','❓ Tirar dúvida'].map(c=>(
+              {['ð PrÃ³ximas sessÃµes','ð° Pagamentos','ð Tarefas do dia','â Tirar dÃºvida'].map(c=>(
                 <button key={c} onClick={()=>setHermesInput(c.slice(3))}
                   className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
                   {c}
@@ -451,7 +451,7 @@ function App() {
           placeholder="Digite sua mensagem..." value={hermesInput} onChange={e=>setHermesInput(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&sendHermesMsg()} disabled={hermesLoading}/>
         <button onClick={sendHermesMsg} disabled={hermesLoading||!hermesInput.trim()}
-          className="bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white rounded-xl px-4 py-2.5 transition-all">→</button>
+          className="bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white rounded-xl px-4 py-2.5 transition-all">â</button>
       </div>
     </div>
   );
@@ -462,9 +462,9 @@ function App() {
         <button onClick={()=>setShowAdmin(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <span className="text-lg">🛡️</span>
+        <span className="text-lg">ð¡ï¸</span>
         <div><h1 className="font-bold text-base text-slate-800 dark:text-white">Admin Master</h1>
-          <p className="text-xs text-slate-500">Módulos por cliente</p>
+          <p className="text-xs text-slate-500">MÃ³dulos por cliente</p>
         </div>
       </div>
       <div className="px-4 mt-4 space-y-4">
@@ -475,14 +475,18 @@ function App() {
                 <p className="text-xs text-slate-500">{tenant.slug}</p>
               </div>
               <button onClick={async()=>{
-                  setAdminSaving(`active-${tenant.id}`);
-                  await adminUpdateTenant(tenant.id,{active:!tenant.active});
-                  const fresh=await adminListTenants(); setAdminTenants(fresh);
-                  setAdminSaving(null);
-                }} disabled={!!adminSaving}
-                className={`text-xs px-3 py-1 rounded-full font-semibold border transition-all ${tenant.active?'bg-green-100 text-green-700 border-green-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200':'bg-red-100 text-red-700 border-red-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200'}`}>
-                {adminSaving===`active-${tenant.id}`?'...':tenant.active?'🟢 ativo':'🔴 bloqueado'}
-              </button>
+              setAdminSaving(`active-${tenant.id}`);
+              await adminUpdateTenant(tenant.id,{active:!tenant.active});
+              const fresh=await adminListTenants(); setAdminTenants(fresh);
+              setAdminSaving(null);
+            }} disabled={!!adminSaving} className="flex items-center gap-2 focus:outline-none disabled:opacity-50">
+              <div className={`w-11 h-6 rounded-full relative transition-all duration-200 ${tenant.active?'bg-green-500':'bg-slate-500 dark:bg-slate-600'}`}>
+                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${tenant.active?'translate-x-5':'translate-x-0.5'}`}/>
+              </div>
+              <span className={`text-xs font-semibold ${tenant.active?'text-green-600 dark:text-green-400':'text-slate-400'}`}>
+                {adminSaving===`active-${tenant.id}`?'...' : tenant.active?'ativo':'bloqueado'}
+              </span>
+            </button>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {['hermes','financeiro','relatorios','calendario'].map(mod=>{
@@ -491,20 +495,25 @@ function App() {
                   <div key={mod} className="flex items-center justify-between px-4 py-2.5">
                     <span className="text-sm text-slate-700 dark:text-slate-300 capitalize">{mod==='hermes'?'Hermes IA':mod.charAt(0).toUpperCase()+mod.slice(1)}</span>
                     <button onClick={async()=>{
-                        setAdminSaving(`${tenant.id}-${mod}`);
-                        await adminToggleModule(tenant.id,mod,!enabled);
-                        const fresh=await adminListTenants(); setAdminTenants(fresh);
-                        setAdminSaving(null);
-                      }} disabled={!!adminSaving} className="transition-all text-xl">
-                      {adminSaving===`${tenant.id}-${mod}`?'⏳':enabled?'🔵':'⚪'}
-                    </button>
+                    setAdminSaving(`${tenant.id}-${mod}`);
+                    await adminToggleModule(tenant.id,mod,!enabled);
+                    const fresh=await adminListTenants(); setAdminTenants(fresh);
+                    setAdminSaving(null);
+                  }} disabled={!!adminSaving} className="focus:outline-none disabled:opacity-50">
+                    {adminSaving===`${tenant.id}-${mod}`
+                      ?<span className="text-xs text-slate-400 w-10 block text-center">...</span>
+                      :<div className={`w-11 h-6 rounded-full relative transition-all duration-200 ${enabled?'bg-rose-500':'bg-slate-500 dark:bg-slate-600'}`}>
+                         <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled?'translate-x-5':'translate-x-0.5'}`}/>
+                       </div>
+                    }
+                  </button>
                   </div>
                 );
               })}
             </div>
             {adminHermesUsage[tenant.id] && (
               <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hermes — Consumo</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hermes â Consumo</p>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs text-slate-600">{adminHermesUsage[tenant.id].messages_used} / {adminHermesUsage[tenant.id].messages_limit} msgs</span>
                   <span className="text-xs font-bold text-rose-500">{adminHermesUsage[tenant.id].percent}%</span>
@@ -517,13 +526,13 @@ function App() {
                   <select value={adminHermesUsage[tenant.id].plan}
                     onChange={async e=>{const u=await adminSetHermesPlan(tenant.id,e.target.value);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
                     className="flex-1 text-xs rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                    <option value="teste">🧪 Teste — 100</option>
-                    <option value="basico">📦 Básico — 1.000</option>
-                    <option value="pro">🚀 Pro — 5.000</option>
-                    <option value="ilimitado">♾️ Ilimitado</option>
+                    <option value="teste">ð§ª Teste â 100</option>
+                    <option value="basico">ð¦ BÃ¡sico â 1.000</option>
+                    <option value="pro">ð Pro â 5.000</option>
+                    <option value="ilimitado">â¾ï¸ Ilimitado</option>
                   </select>
                   <button onClick={async()=>{const u=await adminResetHermesUsage(tenant.id);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
-                    className="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 px-2 py-1.5 rounded-lg">🔄 Zerar</button>
+                    className="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 px-2 py-1.5 rounded-lg">ð Zerar</button>
                 </div>
               </div>
             )}
@@ -553,7 +562,7 @@ function App() {
                 <div className="space-y-6 animate-in fade-in duration-500">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Olá, Fotógrafo</h1>
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">OlÃ¡, FotÃ³grafo</h1>
                             <p className="text-slate-500 dark:text-slate-400 text-sm">Resumo da sua agenda inteligente.</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -563,7 +572,7 @@ function App() {
                             {modules?.hermes && (
                               <button onClick={()=>setShowHermes(true)} title="Assistente IA"
                                 className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 border border-rose-200 dark:border-rose-800">
-                                🤖
+                                ð¤
                               </button>
                             )}
                             {me?.role==='super_admin' && (
@@ -575,7 +584,7 @@ function App() {
                                   setShowAdmin(true);
                                 }} title="Admin Master"
                                 className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 border border-indigo-200 dark:border-indigo-800">
-                                🛡️
+                                ð¡ï¸
                               </button>
                             )}
                             <button onClick={handleLogout} className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-red-500 dark:text-red-400 border border-slate-300 dark:border-slate-700">
@@ -584,7 +593,7 @@ function App() {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <StatCard title="Faturamento (Mês)" value={`R$ ${currentMonthRevenue}`} icon={<TrendingUp size={16} />} subtext="Receita projetada" />
+                        <StatCard title="Faturamento (MÃªs)" value={`R$ ${currentMonthRevenue}`} icon={<TrendingUp size={16} />} subtext="Receita projetada" />
                         <StatCard title="A Receber" value={`R$ ${pendingPayments}`} icon={<DollarSign size={16} />} subtext="Saldos pendentes" />
                     </div>
                     
@@ -598,7 +607,7 @@ function App() {
                     {upcomingShoots.length > 0 ? (
                         <div>
                             <div className="flex justify-between items-center mb-3">
-                                <h2 className="font-bold text-lg text-slate-800 dark:text-slate-200">Próximos Compromissos</h2>
+                                <h2 className="font-bold text-lg text-slate-800 dark:text-slate-200">PrÃ³ximos Compromissos</h2>
                                 <button onClick={() => setView('calendar')} className="flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full">
                                     Ver todos <ArrowRight size={12} className="ml-1"/>
                                 </button>
@@ -617,7 +626,7 @@ function App() {
                         </div>
                     )}
                     <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">Histórico de Faturamento</h3>
+                         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">HistÃ³rico de Faturamento</h3>
                          <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData}>
@@ -646,7 +655,7 @@ function App() {
                               onClick={() => setCalendarMode('month')} 
                               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${calendarMode === 'month' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                           >
-                              Mês
+                              MÃªs
                           </button>
                       </div>
 
@@ -738,10 +747,10 @@ function App() {
             {view === 'history' && (
                 <div className="space-y-4 animate-in fade-in duration-300 pb-24">
                   <div className="sticky top-0 bg-slate-50 dark:bg-slate-950 pt-1 pb-4 z-10">
-                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Histórico</h1>
+                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">HistÃ³rico</h1>
                       <div className="relative">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                          <input type="text" placeholder="Buscar no histórico..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          <input type="text" placeholder="Buscar no histÃ³rico..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       </div>
                   </div>
                   {groupShootsByMonth(historyShoots.filter(s => (s.title || '').toLowerCase().includes(searchTerm.toLowerCase()))).length === 0 ? (
