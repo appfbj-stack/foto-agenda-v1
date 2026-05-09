@@ -457,82 +457,89 @@ function App() {
   );
 
   if (showAdmin) return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-8">
-      <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3">
-        <button onClick={()=>setShowAdmin(false)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+    <div className="fixed inset-0 z-50 bg-slate-900 overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-slate-800 border-b border-white/10 px-4 py-3.5 flex items-center gap-3 shadow-lg">
+        <button onClick={()=>setShowAdmin(false)} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <span className="text-lg">ð¡ï¸</span>
-        <div><h1 className="font-bold text-base text-slate-800 dark:text-white">Admin Master</h1>
-          <p className="text-xs text-slate-500">MÃ³dulos por cliente</p>
+        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-base">🛡️</div>
+        <div>
+          <h1 className="font-bold text-sm text-white tracking-wide">Admin Master</h1>
+          <p className="text-xs text-slate-400">Módulos por cliente</p>
         </div>
       </div>
-      <div className="px-4 mt-4 space-y-4">
+      <div className="px-4 pt-4 pb-8 space-y-4">
         {adminTenants.filter(t=>t.id!==0).map(tenant=>(
-          <div key={tenant.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
-              <div><p className="font-semibold text-sm text-slate-800 dark:text-white">{tenant.name}</p>
-                <p className="text-xs text-slate-500">{tenant.slug}</p>
+          <div key={tenant.id} className="bg-slate-800 rounded-2xl overflow-hidden border border-white/8 shadow-xl">
+            <div className="px-4 py-3 bg-slate-700/60 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-sm text-white">{tenant.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{tenant.slug}</p>
               </div>
               <button onClick={async()=>{
-              setAdminSaving(`active-${tenant.id}`);
-              await adminUpdateTenant(tenant.id,{active:!tenant.active});
-              const fresh=await adminListTenants(); setAdminTenants(fresh);
-              setAdminSaving(null);
-            }} disabled={!!adminSaving} className="flex items-center gap-2 focus:outline-none disabled:opacity-50">
-              <div className={`w-11 h-6 rounded-full relative transition-all duration-200 ${tenant.active?'bg-green-500':'bg-slate-500 dark:bg-slate-600'}`}>
-                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${tenant.active?'translate-x-5':'translate-x-0.5'}`}/>
-              </div>
-              <span className={`text-xs font-semibold ${tenant.active?'text-green-600 dark:text-green-400':'text-slate-400'}`}>
-                {adminSaving===`active-${tenant.id}`?'...' : tenant.active?'ativo':'bloqueado'}
-              </span>
-            </button>
+                setAdminSaving(`active-${tenant.id}`);
+                await adminUpdateTenant(tenant.id,{active:!tenant.active});
+                const fresh=await adminListTenants(); setAdminTenants(fresh);
+                setAdminSaving(null);
+              }} disabled={!!adminSaving} className="flex items-center gap-2.5 focus:outline-none disabled:opacity-50">
+                <div className={`w-12 h-6 rounded-full relative transition-all duration-200 ${tenant.active?'bg-green-500':'bg-slate-600'}`}>
+                  <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${tenant.active?'translate-x-6':'translate-x-0.5'}`}/>
+                </div>
+                <span className={`text-xs font-semibold min-w-[52px] ${tenant.active?'text-green-400':'text-slate-500'}`}>
+                  {adminSaving===`active-${tenant.id}`?'...' : tenant.active?'ativo':'bloqueado'}
+                </span>
+              </button>
             </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-white/5">
               {['hermes','financeiro','relatorios','calendario'].map(mod=>{
                 const enabled=tenant.modules?.[mod]??false;
+                const label = mod==='hermes'?'Hermes IA':mod==='financeiro'?'Financeiro':mod==='relatorios'?'Relatórios':'Calendário';
                 return (
-                  <div key={mod} className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm text-slate-700 dark:text-slate-300 capitalize">{mod==='hermes'?'Hermes IA':mod.charAt(0).toUpperCase()+mod.slice(1)}</span>
+                  <div key={mod} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-slate-200 font-medium">{label}</span>
                     <button onClick={async()=>{
-                    setAdminSaving(`${tenant.id}-${mod}`);
-                    await adminToggleModule(tenant.id,mod,!enabled);
-                    const fresh=await adminListTenants(); setAdminTenants(fresh);
-                    setAdminSaving(null);
-                  }} disabled={!!adminSaving} className="focus:outline-none disabled:opacity-50">
-                    {adminSaving===`${tenant.id}-${mod}`
-                      ?<span className="text-xs text-slate-400 w-10 block text-center">...</span>
-                      :<div className={`w-11 h-6 rounded-full relative transition-all duration-200 ${enabled?'bg-rose-500':'bg-slate-500 dark:bg-slate-600'}`}>
-                         <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled?'translate-x-5':'translate-x-0.5'}`}/>
-                       </div>
-                    }
-                  </button>
+                      setAdminSaving(`${tenant.id}-${mod}`);
+                      await adminToggleModule(tenant.id,mod,!enabled);
+                      const fresh=await adminListTenants(); setAdminTenants(fresh);
+                      setAdminSaving(null);
+                    }} disabled={!!adminSaving} className="focus:outline-none disabled:opacity-50">
+                      {adminSaving===`${tenant.id}-${mod}`
+                        ?<span className="text-xs text-slate-500 w-12 block text-center">...</span>
+                        :<div className={`w-12 h-6 rounded-full relative transition-all duration-200 ${enabled?'bg-rose-500':'bg-slate-600'}`}>
+                           <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${enabled?'translate-x-6':'translate-x-0.5'}`}/>
+                         </div>
+                      }
+                    </button>
                   </div>
                 );
               })}
             </div>
             {adminHermesUsage[tenant.id] && (
-              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hermes â Consumo</p>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-slate-600">{adminHermesUsage[tenant.id].messages_used} / {adminHermesUsage[tenant.id].messages_limit} msgs</span>
-                  <span className="text-xs font-bold text-rose-500">{adminHermesUsage[tenant.id].percent}%</span>
+              <div className="px-4 py-4 border-t border-white/8 bg-slate-900/50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">HERMES — CONSUMO</p>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${adminHermesUsage[tenant.id].percent>=90?'bg-red-500/20 text-red-400':adminHermesUsage[tenant.id].percent>=70?'bg-amber-500/20 text-amber-400':'bg-rose-500/20 text-rose-400'}`}>
+                    {adminHermesUsage[tenant.id].percent}%
+                  </span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mb-3">
-                  <div className={`h-2 rounded-full ${adminHermesUsage[tenant.id].percent>=90?'bg-red-500':adminHermesUsage[tenant.id].percent>=70?'bg-amber-500':'bg-rose-400'}`}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-400">{adminHermesUsage[tenant.id].messages_used} / {adminHermesUsage[tenant.id].messages_limit} msgs</span>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-2 mb-4">
+                  <div className={`h-2 rounded-full transition-all ${adminHermesUsage[tenant.id].percent>=90?'bg-red-500':adminHermesUsage[tenant.id].percent>=70?'bg-amber-500':'bg-rose-500'}`}
                     style={{width:`${adminHermesUsage[tenant.id].percent}%`}}/>
                 </div>
                 <div className="flex gap-2">
                   <select value={adminHermesUsage[tenant.id].plan}
                     onChange={async e=>{const u=await adminSetHermesPlan(tenant.id,e.target.value);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
-                    className="flex-1 text-xs rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                    <option value="teste">ð§ª Teste â 100</option>
-                    <option value="basico">ð¦ BÃ¡sico â 1.000</option>
-                    <option value="pro">ð Pro â 5.000</option>
-                    <option value="ilimitado">â¾ï¸ Ilimitado</option>
+                    className="flex-1 text-xs rounded-xl border border-white/10 bg-slate-700 text-slate-200 px-3 py-2 focus:outline-none focus:border-rose-500/50">
+                    <option value="teste">🧪 Teste — 100</option>
+                    <option value="basico">🦋 Básico — 1.000</option>
+                    <option value="pro">🚀 Pro — 5.000</option>
+                    <option value="ilimitado">♾️ Ilimitado</option>
                   </select>
                   <button onClick={async()=>{const u=await adminResetHermesUsage(tenant.id);setAdminHermesUsage(prev=>({...prev,[tenant.id]:u}));}}
-                    className="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 px-2 py-1.5 rounded-lg">ð Zerar</button>
+                    className="text-xs bg-slate-700 hover:bg-red-900/40 text-slate-400 hover:text-red-400 border border-white/10 px-3 py-2 rounded-xl transition-colors">🔄 Zerar</button>
                 </div>
               </div>
             )}
@@ -540,9 +547,7 @@ function App() {
         ))}
       </div>
     </div>
-  );
-
-  if (showLanding) {
+  );  if (showLanding) {
     return <LandingPage onEnter={handleEnterApp} />;
   }
 
