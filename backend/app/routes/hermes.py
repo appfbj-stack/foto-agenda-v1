@@ -18,7 +18,6 @@ router = APIRouter(prefix="/hermes", tags=["hermes"])
 
 _hermes_token: Optional[str] = None
 
-
 # ── Auth Hermes ───────────────────────────────────────────────────────────────
 
 async def _get_hermes_token() -> str:
@@ -33,7 +32,6 @@ async def _get_hermes_token() -> str:
         _hermes_token = resp.json()["access_token"]
     return _hermes_token
 
-
 async def _hermes_chat_request(message: str) -> str:
     global _hermes_token
     url = settings.HERMES_API_URL.rstrip("/")
@@ -43,20 +41,18 @@ async def _hermes_chat_request(message: str) -> str:
             resp = await client.post(f"{url}/admin/hermes/chat",
                 json={"message": message},
                 headers={"Authorization": f"Bearer {token}"})
-        if resp.status_code == 401 and attempt == 0:
-            _hermes_token = None
-            continue
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("response") or data.get("reply") or data.get("message") or ""
+            if resp.status_code == 401 and attempt == 0:
+                _hermes_token = None
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("response") or data.get("reply") or data.get("message") or ""
     raise HTTPException(status_code=502, detail="Não foi possível autenticar no assistente.")
-
 
 # ── Controle de uso ───────────────────────────────────────────────────────────
 
 def _current_month() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m")
-
 
 def _get_or_create_usage(db: Session, tenant_id: int) -> HermesUsage:
     usage = db.query(HermesUsage).filter(HermesUsage.tenant_id == tenant_id).first()
@@ -73,7 +69,6 @@ def _get_or_create_usage(db: Session, tenant_id: int) -> HermesUsage:
         db.commit()
     return usage
 
-
 def _check_and_increment(db: Session, usage: HermesUsage) -> dict:
     plan = HERMES_PLANS.get(usage.plan, HERMES_PLANS["basico"])
     if usage.messages_used >= plan["messages"]:
@@ -86,29 +81,30 @@ def _check_and_increment(db: Session, usage: HermesUsage) -> dict:
     db.commit()
     return plan
 
-
 def _truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars] + "... [mensagem truncada para economizar tokens]"
 
-
-# ── Contexto do negócio ───────────────────────────────────────────────────────
+# ── Contexto do estúdio ───────────────────────────────────────────────────────
 
 def _build_context_message(message: str, ws: Optional[StudioSettings], is_first: bool) -> str:
-    if not ws or not is_first:
+    if not is_first:
         return message
-    lines = [
-        "=== CONTEXTO DO NEGÓCIO ===",
-        f"Você é o assistente pessoal da oficina '{ws.name}'.",
-        "Ajude com: agendamentos, clientes, veículos, tarefas, dúvidas da oficina.",
-        "Respostas curtas e diretas.",
-    ]
-    if ws.phone:   lines.append(f"Telefone: {ws.phone}")
-    if ws.address: lines.append(f"Endereço: {ws.address}")
-    lines += ["=== FIM DO CONTEXTO ===", "", f"Usuário: {message}"]
-    return "\n".join(lines)
-
+    studio_name = ws.name if ws else "Estudio"
+    phone = f"\nTelefone: {ws.phone}" if ws and ws.phone else ""
+    address = f"\nEndereco: {ws.address}" if ws and ws.address else ""
+    ctx = (
+        "[INSTRUCAO DE SISTEMA] "
+        f"Voce e 'Hermes Foto', assistente de IA do estudio de fotografia '{studio_name}'. "
+        "Ajude com: sessoes fotograficas, ensaios, agenda, clientes, pagamentos e dicas de fotografia. "
+        "Responda em portugues, de forma curta e amigavel. "
+        "NAO mencione 'Admin Master', 'HERMES AGENTE' ou gerenciamento de plataforma."
+        f"{phone}{address} "
+        "[FIM DA INSTRUCAO]\n\n"
+        f"Fotografo pergunta: {message}"
+    )
+    return ctx
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -134,7 +130,6 @@ class UsageOut(BaseModel):
     month: str
     percent: float
 
-
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/chat", response_model=ChatResponse)
@@ -150,7 +145,7 @@ async def hermes_chat(
     usage = _get_or_create_usage(db, cu.tenant_id)
     plan = _check_and_increment(db, usage)
 
-    # Contexto do negócio (só na 1ª mensagem)
+    # Contexto do estúdio (só na 1ª mensagem)
     ws = db.query(StudioSettings).filter(StudioSettings.tenant_id == cu.tenant_id).first()
     is_first = len(payload.history) <= 1
     full_message = _build_context_message(payload.message, ws, is_first)
@@ -178,7 +173,6 @@ async def hermes_chat(
     except Exception as e:
         logger.exception("Erro inesperado: %s", e)
         raise HTTPException(status_code=500, detail="Erro interno.")
-
 
 @router.get("/usage", response_model=UsageOut)
 def hermes_usage(
