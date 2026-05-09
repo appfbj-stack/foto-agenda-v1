@@ -57,6 +57,16 @@ def login(payload: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email, User.active.is_(True)).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Email ou senha inválidos")
+
+    # Verifica se o tenant está ativo (bloqueio por inadimplência)
+    if user.role != "super_admin":
+        tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+        if not tenant or not tenant.active:
+            raise HTTPException(
+                status_code=403,
+                detail="Conta suspensa. Entre em contato com o suporte."
+            )
+
     return TokenOut(access_token=create_access_token({"sub": str(user.id)}))
 
 @router.get("/me", response_model=UserOut)
