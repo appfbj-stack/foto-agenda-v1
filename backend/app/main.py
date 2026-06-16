@@ -47,9 +47,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-from app.routes import auth, admin, shoots, hermes, panel
+from app.routes import auth, admin, shoots, hermes, panel, license_check
 
-app = FastAPI(title="FotoAgenda API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="FotoAgenda Pro API", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,6 +69,7 @@ app.include_router(admin.router)
 app.include_router(shoots.router)
 app.include_router(hermes.router)
 app.include_router(panel.router)
+app.include_router(license_check.router)
 
 
 @app.get("/health")

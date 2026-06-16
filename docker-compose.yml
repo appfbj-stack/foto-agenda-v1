@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fotoagenda
+      POSTGRES_USER: fotoagenda
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fotoagenda_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fotoagenda -d fotoagenda"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - kairos_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fotoagenda:${POSTGRES_PASSWORD:-fotoagenda_secret}@postgres:5432/fotoagenda
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      HERMES_API_URL: ${HERMES_API_URL:-}
+      HERMES_EMAIL: ${HERMES_EMAIL:-}
+      HERMES_PASSWORD: ${HERMES_PASSWORD:-}
+      KAIROS_ADMIN_URL: ${KAIROS_ADMIN_URL:-}
+      KAIROS_CLIENT_ID: ${KAIROS_CLIENT_ID:-}
+      APP_SLUG: foto-agenda-pro
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    networks:
+      - kairos_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foto-agenda-api.rule=Host(`api.fotografia.fbautomacao.space`)"
+      - "traefik.http.routers.foto-agenda-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.foto-agenda-api.loadbalancer.server.port=8000"
+
+volumes:
+  postgres_data:
+
+networks:
+  kairos_network:
+    external: true

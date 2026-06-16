@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.deps import get_current_user
 from app.models import MODULES, Tenant, TenantModule, User
+from app.services.license import check_tenant_license
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -53,12 +54,12 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     return TokenOut(access_token=token)
 
 @router.post("/login", response_model=TokenOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)):
+async def login(payload: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email, User.active.is_(True)).first()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Email ou senha inválidos")
 
-    # Verifica se o tenant está ativo (bloqueio por inadimplência)
+    # Verifica se o tenant está ativo (bloqueio por inadimplência local)
     if user.role != "super_admin":
         tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
         if not tenant or not tenant.active:
@@ -66,6 +67,9 @@ def login(payload: LoginIn, db: Session = Depends(get_db)):
                 status_code=403,
                 detail="Conta suspensa. Entre em contato com o suporte."
             )
+
+        # Verifica licença no Kairos Admin (falha aberta se Admin indisponível)
+        await check_tenant_license(tenant.slug)
 
     return TokenOut(access_token=create_access_token({"sub": str(user.id)}))
 
