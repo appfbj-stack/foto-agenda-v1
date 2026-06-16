@@ -45,6 +45,23 @@ services:
       - "traefik.http.routers.foto-agenda-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.foto-agenda-api.loadbalancer.server.port=8000"
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://api.fotografia.fbautomacao.space
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - kairos_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foto-agenda.rule=Host(`fotografia.fbautomacao.space`)"
+      - "traefik.http.routers.foto-agenda.tls.certresolver=letsencrypt"
+      - "traefik.http.services.foto-agenda.loadbalancer.server.port=80"
+
 volumes:
   postgres_data:
 
