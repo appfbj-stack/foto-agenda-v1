@@ -37,13 +37,10 @@ services:
       APP_SLUG: foto-agenda-pro
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    ports:
+      - "3011:8000"
     networks:
       - kairos_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.foto-agenda-api.rule=Host(`api.fotografia.fbautomacao.space`)"
-      - "traefik.http.routers.foto-agenda-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.foto-agenda-api.loadbalancer.server.port=8000"
 
   frontend:
     build:
@@ -54,13 +51,10 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    ports:
+      - "3012:80"
     networks:
       - kairos_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.foto-agenda.rule=Host(`fotografia.fbautomacao.space`)"
-      - "traefik.http.routers.foto-agenda.tls.certresolver=letsencrypt"
-      - "traefik.http.services.foto-agenda.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
